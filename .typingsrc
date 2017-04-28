@@ -1,0 +1,2 @@
+proxy="http://web-proxy.bbn.hpecorp.net:8080"
+rejectUnauthorized=false
