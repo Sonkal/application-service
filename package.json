@@ -4,14 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "node ./src/index.js",
-  "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "echo \"Build ...\" && rm -rf dist && tsc",
+    "start": "echo \"Start ...\" && node ./dist/index.js",
+    "startDev": "echo \"Start Dev...\" && nodemon ./dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "echo \"Pre-publish ...\"typings install && npm run build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.17.1",
     "express": "^4.15.2",
-    "mongoose": "^4.9.6"
+    "mongoose": "^4.9.6",
+    "typescript-rest": "^0.4.0"
+  },
+  "devDependencies": {
+    "typings": "^2.1.1"
   }
 }
