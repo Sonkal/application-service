@@ -1,11 +1,19 @@
 import {Server, Path, GET, PathParam, POST, DELETE, Errors} from "typescript-rest";
 import {ApplicationDb} from "./application-db";
 import {Promise} from 'es6-promise';
+//ToDo: ID is clashing with mongo id - type definiton must be different
 import {Application} from "@sonkal/application-type"
+
+export class AppBadError extends Errors.BadRequestError{
+    data;
+    constructor(message?: string, data?:any){
+        super(message);
+        this.data = data;
+    };
+}
 
 @Path("/api/applications")
 export class ApplicationService {
-    static use:boolean;
     constructor(){
     }
 
@@ -63,13 +71,17 @@ export class ApplicationService {
         return new Promise<any>(function (resolve, reject) {
             let query = {_id: id};
             ApplicationDb.findOneAndRemove(query, function (err, application) {
+                console.log(`BadError ${err}, ${application}`);
+                // ToDo: why does it fail with ;id=32???
                 if (err) {
+                    console.error(JSON.stringify(err));
                     return reject({info: 'cannot find, cannot delete', error: err});
                 }
                 if (application) {
                     return resolve({info: 'ApplicationDb with _id:' + id+" deleted", data: application});
                 }
-                reject({info: 'app does not exist: _id='+id});
+                throw new AppBadError('app does not exist:'+id);
+                //reject({info: 'app does not exist: _id='+id});
             });
         });
     }

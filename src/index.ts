@@ -1,15 +1,27 @@
 import * as express from "express";
-import {Server, Path, GET, PathParam} from "typescript-rest";
-import {ApplicationService} from "./applications/application-service"
+import {Server, Path, GET, PathParam, HttpError} from "typescript-rest";
+import {ApplicationService, AppBadError} from "./applications/application-service"
 
 import {connect} from "mongoose"
 connect("mongodb://192.168.99.100/mydb");
 
-ApplicationService.use = true;
-
 let app: express.Application = express();
-Server.buildServices(app);
+Server.buildServices(app,ApplicationService);
+
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    //ToDo: this does not work - error is not caugh
+    console.log("My error handler ...");
+    if (err instanceof AppBadError){
+        console.log("..handling erro... "+JSON.stringify(err));
+        res.set("Content-Type", "application/json")
+        res.status(err.statusCode)
+        res.json({info : err.message, data: err.data});
+    } else {
+        next(err);
+    }
+});
 
 app.listen(3000, function() {
     console.log('Rest Server listening on port 3000!');
 });
+
