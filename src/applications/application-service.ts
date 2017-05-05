@@ -1,6 +1,7 @@
 import {Server, Path, GET, PathParam, POST, DELETE, Errors} from "typescript-rest";
-import {IApplication, ApplicationDb} from "./application-db";
+import {ApplicationDb} from "./application-db";
 import {Promise} from 'es6-promise';
+import {Application} from "@sonkal/application-type"
 
 @Path("/api/applications")
 export class ApplicationService {
@@ -20,9 +21,13 @@ export class ApplicationService {
             });
         });
     }
+
+    //ToDo: new type has differnt name for phone number - check with Mongo how to save it
+    //ToDo: return promise from mongo direclty
+    //ToDo: reuse code for all rest methods and remove duplication
     @Path("")
     @POST
-    create(app:IApplication): Promise<any> {
+    create(app:Application): Promise<any> {
         let newApplication = new ApplicationDb(app);
         return new Promise<any>(function (resolve, reject) {
             newApplication.save((err)=>{
@@ -38,7 +43,7 @@ export class ApplicationService {
     @GET
     getApplication(@PathParam('personalId') personalId: string): Promise<any> {
         return new Promise<any>(function (resolve, reject) {
-            var query = {personalId: personalId};
+            let query = {personalId: personalId};
             ApplicationDb.findOne(query, function (err, application) {
                 if (err) {
                     return reject({info: 'error during find ApplicationDb', error: err});
@@ -56,7 +61,7 @@ export class ApplicationService {
     @DELETE
     deleteBySystemId(@PathParam('id') id: string): Promise<any> {
         return new Promise<any>(function (resolve, reject) {
-            var query = {_id: id};
+            let query = {_id: id};
             ApplicationDb.findOneAndRemove(query, function (err, application) {
                 if (err) {
                     return reject({info: 'cannot find, cannot delete', error: err});
@@ -73,7 +78,7 @@ export class ApplicationService {
     @DELETE
     delete(@PathParam('personalId') personalId: string): Promise<any> {
         return new Promise<any>(function (resolve, reject) {
-            var query = {personalId: personalId};
+            let query = {personalId: personalId};
             ApplicationDb.findOneAndRemove(query, function (err, application) {
                 if (err) {
                     return reject({info: 'cannot find, cannot delete', error: err});
