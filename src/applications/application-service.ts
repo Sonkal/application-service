@@ -1,14 +1,14 @@
-import {Server, Path, GET, PathParam, POST, DELETE, Errors} from "typescript-rest";
+import {Path, GET, PathParam, POST, DELETE, Errors} from "typescript-rest";
 import {ApplicationDb} from "./application-db";
-import {Promise} from 'es6-promise';
+import {Promise} from "es6-promise";
 //ToDo: ID is clashing with mongo id - type definiton must be different
-import {Application} from "@sonkal/application-type"
+import {Application} from "@sonkal/application-type";
 
 export class AppBadError extends Errors.BadRequestError{
     data;
     constructor(message?: string, data?:any){
         super(message);
-        this.data = data;
+        this.data = {info: message, data:data};
     };
 }
 
@@ -19,7 +19,7 @@ export class ApplicationService {
 
     @Path("")
     @GET
-    getAll(): Promise<String> {
+    getAll(): Promise<any> {
         return new Promise<any>(function (resolve, reject) {
             ApplicationDb.find((err, applications) => {
                 if (err) {
@@ -27,6 +27,8 @@ export class ApplicationService {
                 }
                 resolve({info: 'Applications found successfully', data: applications});
             });
+        }).catch<any>((error)=>{
+            return error;
         });
     }
 
@@ -71,19 +73,16 @@ export class ApplicationService {
         return new Promise<any>(function (resolve, reject) {
             let query = {_id: id};
             ApplicationDb.findOneAndRemove(query, function (err, application) {
-                console.log(`BadError ${err}, ${application}`);
                 // ToDo: why does it fail with ;id=32???
                 if (err) {
-                    console.error(JSON.stringify(err));
-                    return reject({info: 'cannot find, cannot delete', error: err});
+                    return reject(new AppBadError('cannot find, cannot delete',err));
                 }
                 if (application) {
                     return resolve({info: 'ApplicationDb with _id:' + id+" deleted", data: application});
                 }
-                throw new AppBadError('app does not exist:'+id);
-                //reject({info: 'app does not exist: _id='+id});
+                reject(new AppBadError('app does not exist:'+id,{data:"some"}));
             });
-        });
+        }).catch<any>((error)=>{return error;});
     }
 
     @Path(":personalId")
