@@ -17,38 +17,53 @@ export class ApplicationService {
     constructor(){
     }
 
-    @Path("")
-    @GET
-    getAll(): Promise<any> {
+    /**
+     * Response handler - if error, reject
+     * if success, resolve
+     * @returns {(err:any, data:any)=>any}
+     */
+    respH(reject, errorInfo:string, resolve, dataInfo:string){
+        return (err, data) => {
+            if (err) {
+                return reject(new AppBadError(errorInfo,err));
+            }
+            resolve({info: dataInfo, data: data});
+        };
+    }
+
+    /**
+     * Generates promise and invokes logic inside
+     * It catches error and reject with Error
+     */
+    promiseGenerator(logic:(resolve,reject)=>void):Promise<any>{
         return new Promise<any>(function (resolve, reject) {
-            ApplicationDb.find((err, applications) => {
-                if (err) {
-                    return reject({info: 'error during find Applications', error: err});
-                }
-                resolve({info: 'Applications found successfully', data: applications});
-            });
+            logic(reject,resolve);
         }).catch<any>((error)=>{
             return error;
         });
     }
 
-    //ToDo: new type has differnt name for phone number - check with Mongo how to save it
-    //ToDo: return promise from mongo direclty
-    //ToDo: reuse code for all rest methods and remove duplication
     @Path("")
-    @POST
-    create(app:Application): Promise<any> {
-        let newApplication = new ApplicationDb(app);
-        return new Promise<any>(function (resolve, reject) {
-            newApplication.save((err)=>{
-                if (err){
-                    return reject({info: 'error during ApplicationDb create', error: err});
-                }
-                resolve({info: 'ApplicationDb saved successfully', data: newApplication});
-            });
+    @GET
+    getAll(): Promise<any> {
+        let self = this;
+        return this.promiseGenerator((resolve,reject)=>{
+            ApplicationDb.find(self.respH(reject,'Error during find Applications',resolve,'Applications found successfully'));
         });
     }
 
+    //ToDo: new type has differnt name for phone number - check with Mongo how to save it
+    @Path("")
+    @POST
+    create(app:Application): Promise<any> {
+        let self = this;
+        return this.promiseGenerator((resolve,reject)=>{
+            let newApplication = new ApplicationDb(app);
+            newApplication.save(self.respH(reject,"Error during Application create",resolve,"Application saved successfully"));
+        });
+    }
+
+    //ToDo: reuse code for all rest methods and remove duplication - generalize: if data == nul =>
     @Path(":personalId")
     @GET
     getApplication(@PathParam('personalId') personalId: string): Promise<any> {
@@ -61,7 +76,7 @@ export class ApplicationService {
                 if (application) {
                     return resolve({info: 'ApplicationDb found successfully', data: application});
                 } else {
-                    resolve({info: 'ApplicationDb not found with personalId:' + personalId});
+                    reject({info: 'ApplicationDb not found with personalId:' + personalId});
                 }
             });
         });
