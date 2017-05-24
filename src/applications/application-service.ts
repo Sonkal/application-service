@@ -9,46 +9,45 @@ export class AppBadError extends Errors.BadRequestError{
     constructor(message?: string, data?:any){
         super(message);
         this.data = {info: message, data:data};
+        (<any>this).__proto__ = AppBadError.prototype;
     };
+}
+
+/**
+ * Response handler - if error, reject
+ * if success, resolve
+ * @returns {(err:any, data:any)=>any}
+ */
+function respH(reject, errorInfo:string, resolve, dataInfo:string){
+    return (err, data) => {
+        if (err) {
+            return reject(new AppBadError(errorInfo,err));
+        }
+        resolve({info: dataInfo, data: data});
+    };
+}
+
+/**
+ * Generates promise and invokes logic inside
+ * It catches error and reject with Error
+ */
+function promiseGenerator(logic:(resolve,reject)=>void):Promise<any>{
+    return new Promise<any>(function (resolve, reject) {
+        logic(reject,resolve);
+    }).catch<any>((error)=>{
+        console.error("DB call finished with error:")
+        console.error(error)
+        return error;
+    });
 }
 
 @Path("/api/applications")
 export class ApplicationService {
-    constructor(){
-    }
-
-    /**
-     * Response handler - if error, reject
-     * if success, resolve
-     * @returns {(err:any, data:any)=>any}
-     */
-    respH(reject, errorInfo:string, resolve, dataInfo:string){
-        return (err, data) => {
-            if (err) {
-                return reject(new AppBadError(errorInfo,err));
-            }
-            resolve({info: dataInfo, data: data});
-        };
-    }
-
-    /**
-     * Generates promise and invokes logic inside
-     * It catches error and reject with Error
-     */
-    promiseGenerator(logic:(resolve,reject)=>void):Promise<any>{
-        return new Promise<any>(function (resolve, reject) {
-            logic(reject,resolve);
-        }).catch<any>((error)=>{
-            return error;
-        });
-    }
-
     @Path("")
     @GET
     getAll(): Promise<any> {
-        let self = this;
-        return this.promiseGenerator((resolve,reject)=>{
-            ApplicationDb.find(self.respH(reject,'Error during find Applications',resolve,'Applications found successfully'));
+        return promiseGenerator((resolve,reject)=>{
+            ApplicationDb.find(respH(reject,'Error during find Applications',resolve,'Applications found successfully'));
         });
     }
 
@@ -56,10 +55,9 @@ export class ApplicationService {
     @Path("")
     @POST
     create(app:Application): Promise<any> {
-        let self = this;
-        return this.promiseGenerator((resolve,reject)=>{
+        return promiseGenerator((resolve,reject)=>{
             let newApplication = new ApplicationDb(app);
-            newApplication.save(self.respH(reject,"Error during Application create",resolve,"Application saved successfully"));
+            newApplication.save(respH(reject,"Error during Application create",resolve,"Application saved successfully"));
         });
     }
 
