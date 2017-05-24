@@ -35,8 +35,8 @@ function promiseGenerator(logic:(resolve,reject)=>void):Promise<any>{
     return new Promise<any>(function (resolve, reject) {
         logic(reject,resolve);
     }).catch<any>((error)=>{
-        console.error("DB call finished with error:")
-        console.error(error)
+        console.error("DB call finished with error:");
+        console.error(error);
         return error;
     });
 }
