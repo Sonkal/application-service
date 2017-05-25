@@ -1,17 +1,31 @@
-import {Path, GET, PathParam, POST, DELETE, Errors, ContextRequest, Return} from "typescript-rest";
+import {Path, GET, PathParam, POST, DELETE, Errors, ContextRequest} from "typescript-rest";
 import {ApplicationDb} from "./application-db";
 import {Promise} from "es6-promise";
 //ToDo: ID is clashing with mongo id - type definiton must be different
 import {Application} from "@sonkal/application-type";
-import {Request, Response, Router} from 'express'
+import {Request} from "express";
+import {HttpError} from "typescript-rest";
 
-export class AppBadError extends Errors.BadRequestError {
-    data;
+export class AppBadReqError extends Errors.BadRequestError {
+    info: string;
+    data: any;
 
-    constructor(message?: string, data?: any) {
+    constructor(message: string, data?: any) {
         super(message);
-        this.data = {info: message, data: data};
-        (<any>this).__proto__ = AppBadError.prototype;
+        this.info = message;
+        this.data = data;
+        (<any>this).__proto__ = AppBadReqError.prototype;
+    };
+}
+export class AppServerError extends HttpError {
+    info: string;
+    data: any;
+
+    constructor(name: string, message: string, data?: any) {
+        super(name, 500, message);
+        this.info = message;
+        this.data = data;
+        (<any>this).__proto__ = AppBadReqError.prototype;
     };
 }
 
@@ -24,7 +38,10 @@ function respH(reject: (error?: any) => void, errorInfo: string,
                resolve: (value?: any) => void, dataInfo: string): (err: any, data: any) => any {
     return (err, data) => {
         if (err) {
-            return reject(new AppBadError(errorInfo, err));
+            if (err.name === "ValidationError")
+                return reject(new AppBadReqError(errorInfo, err));
+            else
+                return reject(new AppServerError(err.name, errorInfo, err));
         }
         console.log("OK, got data");
         console.log(data);
@@ -38,12 +55,13 @@ function respH(reject: (error?: any) => void, errorInfo: string,
  */
 function promiseGenerator(logic: (resolve, reject) => void): Promise<any> {
     return new Promise<any>(function (resolve, reject) {
-        logic(resolve, reject);
-    }).catch<any>((error) => {
-        console.error("DB call finished with error:");
-        console.error(error);
-        return error;
+        logic(resolve, (err) => {
+            console.error("DB call finished with error:");
+            console.error(err);
+            reject(err);
+        });
     });
+    // MUST NOT catch it here, it must propagate to the caller (type-rest middleware), instead, intercept reject method
 }
 
 @Path("/api/applications")
@@ -95,12 +113,12 @@ export class ApplicationService {
             ApplicationDb.findOneAndRemove(query, function (err, application) {
                 // ToDo: why does it fail with ;id=32???
                 if (err) {
-                    return reject(new AppBadError('cannot find, cannot delete', err));
+                    return reject(new AppBadReqError('cannot find, cannot delete', err));
                 }
                 if (application) {
                     return resolve({info: 'ApplicationDb with _id:' + id + " deleted", data: application});
                 }
-                reject(new AppBadError('app does not exist:' + id, {data: "some"}));
+                reject(new AppBadReqError('app does not exist:' + id, {data: "some"}));
             });
         }).catch<any>((error) => {
             return error;

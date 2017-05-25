@@ -1,6 +1,6 @@
 import * as express from "express";
 import {Server} from "typescript-rest";
-import {ApplicationService, AppBadError} from "./applications/application-service";
+import {ApplicationService, AppBadReqError} from "./applications/application-service";
 import {connectMongo} from "./mongo/mongo-utils";
 
 
@@ -18,11 +18,12 @@ Server.buildServices(app, ApplicationService);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.log("Handling error");
-    if (err instanceof AppBadError) {
-        console.log("App error:" + err.data.info);
+    if (err instanceof AppBadReqError) {
+        let myErr = <AppBadReqError> err;
+        console.log("App error:" + myErr.info);
         res.set("Content-Type", "application/json");
-        res.status(err.statusCode);
-        res.json({info: err.message, data: err.data});
+        res.status(myErr.statusCode);
+        res.json({info: myErr.info, data: myErr.data});
     } else {
         console.log("Not app error");
         next(err);
