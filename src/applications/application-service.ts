@@ -5,6 +5,7 @@ import {Promise} from "es6-promise";
 import {Application} from "@sonkal/application-type";
 import {Request} from "express";
 import {HttpError} from "typescript-rest";
+import * as MongoErrors from "mongo-errors";
 
 export class AppBadReqError extends Errors.BadRequestError {
     info: string;
@@ -39,6 +40,8 @@ function respH(reject: (error?: any) => void, errorInfo: string,
     return (err, data) => {
         if (err) {
             if (err.name === "ValidationError")
+                return reject(new AppBadReqError(errorInfo, err));
+            else if (err.code === MongoErrors.DuplicateKey)
                 return reject(new AppBadReqError(errorInfo, err));
             else
                 return reject(new AppServerError(err.name, errorInfo, err));
