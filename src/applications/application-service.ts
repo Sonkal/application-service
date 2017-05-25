@@ -1,14 +1,16 @@
-import {Path, GET, PathParam, POST, DELETE, Errors} from "typescript-rest";
+import {Path, GET, PathParam, POST, DELETE, Errors, ContextRequest, Return} from "typescript-rest";
 import {ApplicationDb} from "./application-db";
 import {Promise} from "es6-promise";
 //ToDo: ID is clashing with mongo id - type definiton must be different
 import {Application} from "@sonkal/application-type";
+import {Request, Response, Router} from 'express'
 
-export class AppBadError extends Errors.BadRequestError{
+export class AppBadError extends Errors.BadRequestError {
     data;
-    constructor(message?: string, data?:any){
+
+    constructor(message?: string, data?: any) {
         super(message);
-        this.data = {info: message, data:data};
+        this.data = {info: message, data: data};
         (<any>this).__proto__ = AppBadError.prototype;
     };
 }
@@ -18,11 +20,14 @@ export class AppBadError extends Errors.BadRequestError{
  * if success, resolve
  * @returns {(err:any, data:any)=>any}
  */
-function respH(reject, errorInfo:string, resolve, dataInfo:string){
+function respH(reject: (error?: any) => void, errorInfo: string,
+               resolve: (value?: any) => void, dataInfo: string): (err: any, data: any) => any {
     return (err, data) => {
         if (err) {
-            return reject(new AppBadError(errorInfo,err));
+            return reject(new AppBadError(errorInfo, err));
         }
+        console.log("OK, got data");
+        console.log(data);
         resolve({info: dataInfo, data: data});
     };
 }
@@ -31,10 +36,10 @@ function respH(reject, errorInfo:string, resolve, dataInfo:string){
  * Generates promise and invokes logic inside
  * It catches error and reject with Error
  */
-function promiseGenerator(logic:(resolve,reject)=>void):Promise<any>{
+function promiseGenerator(logic: (resolve, reject) => void): Promise<any> {
     return new Promise<any>(function (resolve, reject) {
-        logic(reject,resolve);
-    }).catch<any>((error)=>{
+        logic(resolve, reject);
+    }).catch<any>((error) => {
         console.error("DB call finished with error:");
         console.error(error);
         return error;
@@ -46,18 +51,20 @@ export class ApplicationService {
     @Path("")
     @GET
     getAll(): Promise<any> {
-        return promiseGenerator((resolve,reject)=>{
-            ApplicationDb.find(respH(reject,'Error during find Applications',resolve,'Applications found successfully'));
+        return promiseGenerator((resolve, reject) => {
+            ApplicationDb.find(respH(reject, 'Error during find Applications', resolve, 'Applications found successfully'));
         });
     }
 
     //ToDo: new type has differnt name for phone number - check with Mongo how to save it
     @Path("")
     @POST
-    create(app:Application): Promise<any> {
-        return promiseGenerator((resolve,reject)=>{
+    create(app: Application, @ContextRequest request: Request): Promise<any> {
+        console.log("Create application" + request.originalUrl);
+        console.log(JSON.stringify(app, null, 2));
+        return promiseGenerator((resolve, reject) => {
             let newApplication = new ApplicationDb(app);
-            newApplication.save(respH(reject,"Error during Application create",resolve,"Application saved successfully"));
+            newApplication.save(respH(reject, "Error during Application create", resolve, "Application saved successfully"));
         });
     }
 
@@ -88,14 +95,16 @@ export class ApplicationService {
             ApplicationDb.findOneAndRemove(query, function (err, application) {
                 // ToDo: why does it fail with ;id=32???
                 if (err) {
-                    return reject(new AppBadError('cannot find, cannot delete',err));
+                    return reject(new AppBadError('cannot find, cannot delete', err));
                 }
                 if (application) {
-                    return resolve({info: 'ApplicationDb with _id:' + id+" deleted", data: application});
+                    return resolve({info: 'ApplicationDb with _id:' + id + " deleted", data: application});
                 }
-                reject(new AppBadError('app does not exist:'+id,{data:"some"}));
+                reject(new AppBadError('app does not exist:' + id, {data: "some"}));
             });
-        }).catch<any>((error)=>{return error;});
+        }).catch<any>((error) => {
+            return error;
+        });
     }
 
     @Path(":personalId")
@@ -108,9 +117,9 @@ export class ApplicationService {
                     return reject({info: 'cannot find, cannot delete', error: err});
                 }
                 if (application) {
-                    return resolve({info: 'Application with personalId:' + personalId+" deleted", data: application});
+                    return resolve({info: 'Application with personalId:' + personalId + " deleted", data: application});
                 }
-                reject({info: 'cannot find personalId='+personalId});
+                reject({info: 'cannot find personalId=' + personalId});
             });
         });
     }
