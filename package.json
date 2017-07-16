@@ -16,6 +16,7 @@
     "@sonkal/application-type": "^1.0.0",
     "body-parser": "^1.17.1",
     "express": "^4.15.2",
+    "json2csv": "^3.9.1",
     "mongo-errors": "^1.0.1",
     "mongoose": "^4.9.6",
     "typescript-rest": "^0.4.0"

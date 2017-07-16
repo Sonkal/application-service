@@ -1,11 +1,13 @@
-import {Path, GET, PathParam, POST, DELETE, Errors, ContextRequest} from "typescript-rest";
+import {Path, GET, PathParam, POST, DELETE, Errors, ContextRequest, QueryParam} from "typescript-rest";
 import {ApplicationDb} from "./application-db";
 import {Promise} from "es6-promise";
 //ToDo: ID is clashing with mongo id - type definiton must be different
 import {Application} from "@sonkal/application-type";
 import {Request} from "express";
-import {HttpError} from "typescript-rest";
+import {HttpError, Return} from "typescript-rest";
 import * as MongoErrors from "mongo-errors";
+import * as json2csv from 'json2csv/lib/json2csv';
+import {CsvExport} from "./csv-export";
 
 export class AppBadReqError extends Errors.BadRequestError {
     info: string;
@@ -71,9 +73,16 @@ function promiseGenerator(logic: (resolve, reject) => void): Promise<any> {
 export class ApplicationService {
     @Path("")
     @GET
-    getAll(): Promise<any> {
+    getAll(@QueryParam("csv") csv: string): Promise<any> {
         return promiseGenerator((resolve, reject) => {
-            ApplicationDb.find(respH(reject, 'Error during find Applications', resolve, 'Applications found successfully'));
+            ApplicationDb.find(respH(reject, 'Error during find Applications', (value) => {
+                if (csv != null) {
+                    let buffer = CsvExport(value.data);
+                    resolve(new Return.DownloadBinaryData(buffer, "application/json", "data.csv"));
+                } else {
+                    resolve(value);
+                }
+            }, 'Applications found successfully'));
         });
     }
 
