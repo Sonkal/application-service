@@ -2,12 +2,11 @@ import {Path, GET, PathParam, POST, DELETE, Errors, ContextRequest, QueryParam} 
 import {ApplicationDb} from "./application-db";
 import {Promise} from "es6-promise";
 //ToDo: ID is clashing with mongo id - type definiton must be different
-import {Application} from "@sonkal/application-type";
+import {AdminApplication} from "@sonkal/application-type";
 import {Request} from "express";
-import {HttpError, Return} from "typescript-rest";
+import {HttpError} from "typescript-rest";
 import * as MongoErrors from "mongo-errors";
-import * as json2csv from 'json2csv/lib/json2csv';
-import {CsvExport} from "./csv-export";
+import {CsvExportHandler} from "./csv-export";
 
 export class AppBadReqError extends Errors.BadRequestError {
     info: string;
@@ -75,21 +74,15 @@ export class ApplicationService {
     @GET
     getAll(@QueryParam("csv") csv: string): Promise<any> {
         return promiseGenerator((resolve, reject) => {
-            ApplicationDb.find(respH(reject, 'Error during find Applications', (value) => {
-                if (csv != null) {
-                    let buffer = CsvExport(value.data);
-                    resolve(new Return.DownloadBinaryData(buffer, "application/json", "data.csv"));
-                } else {
-                    resolve(value);
-                }
-            }, 'Applications found successfully'));
+            ApplicationDb.find(respH(reject, 'Error during find Applications', CsvExportHandler(resolve, csv != null)
+                , 'Applications found successfully'));
         });
     }
 
     //ToDo: new type has differnt name for phone number - check with Mongo how to save it
     @Path("")
     @POST
-    create(app: Application, @ContextRequest request: Request): Promise<any> {
+    create(app: AdminApplication, @ContextRequest request: Request): Promise<any> {
         console.log("Create application" + request.originalUrl);
         console.log(JSON.stringify(app, null, 2));
         return promiseGenerator((resolve, reject) => {
