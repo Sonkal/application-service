@@ -9,5 +9,5 @@ docker run \
   --init \
   -it \
   sonkal/application-service \
-  sh
-#  node dist/index.js
+#  sh
+  node dist/index.js

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "echo \"Build ...\" && rm -rf dist && tsc",
+    "build": "echo \"Build with TSC ...\" && rm -rf dist && tsc",
     "start": "echo \"Start ...\" && node ./dist/index.js",
     "startDev": "echo \"Start Dev...\" && nodemon ./dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
