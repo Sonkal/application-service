@@ -8,6 +8,7 @@ docker run \
   --name "application-service" \
   --init \
   -it \
+  -p 3000:3000 \
   sonkal/application-service \
 #  sh
   node dist/index.js

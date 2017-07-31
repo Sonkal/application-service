@@ -10,4 +10,5 @@ RUN cd /home/node/app && npm install --production
 COPY . /home/node/app
 RUN npm run-script build
 
+EXPOSE 3000
 CMD ["node", "dist/index.js"]
