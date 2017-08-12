@@ -1,7 +1,8 @@
 import {connect} from "mongoose"
 import {Mongoose} from "mongoose";
 
-const CONNECTION_STRING= "mongodb://192.168.99.100/mydb";
+const MONGO_HOST = process.env.MONGO_HOST || "mymongo";
+const CONNECTION_STRING= `mongodb://${MONGO_HOST}/mydb`;
 
 let connectedStatus = false;
 let retryRunningId = 0;
@@ -42,7 +43,7 @@ export function connectMongo() {
 }
 
 let openConnection = function () {
-    console.log("Opening connection ...");
+    console.log(`Opening connection ...${CONNECTION_STRING}`);
     return connect(CONNECTION_STRING);
 };
 
