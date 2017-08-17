@@ -1,8 +1,11 @@
 import {connect} from "mongoose"
 import {Mongoose} from "mongoose";
+import {disconnect} from "mongoose";
 
+const MONGO_USER = process.env.MONGO_USER || "mymongo";
+const MONGO_PASS = process.env.MONGO_PASS || "mymongo";
 const MONGO_HOST = process.env.MONGO_HOST || "mymongo";
-const CONNECTION_STRING= `mongodb://${MONGO_HOST}/mydb`;
+const CONNECTION_STRING = `mongodb://${MONGO_HOST}/mydb`;
 
 let connectedStatus = false;
 let retryRunningId = 0;
@@ -10,30 +13,35 @@ let retryRunSeq = 1;
 
 const MAX_RETRY = 5;
 
-export function connectMongo() {
-    let mongoose = openConnection();
+let mongoose = new Mongoose();
+let connection = mongoose.connection;
 
-    mongoose.connection.on('connected', function () {
+//ToDo: with new mogoose, reconnet functionality is probably not needed
+
+export function connectMongo() {
+    openConnection();
+
+    connection.on('connected', function () {
         connectedStatus = true;
         console.log("DB Connected");
     });
 
 // When the connection is disconnected
-    mongoose.connection.on('disconnected', function () {
+    connection.on('disconnected', function () {
         connectedStatus = false;
         console.log('Mongoose default connection disconnected');
-        startBackofConnect(mongoose);
+        startBackofConnect(connection);
     });
 // ERROR
-    mongoose.connection.on("error", (error) => {
+    connection.on("error", (error) => {
         console.error("Mongo error:" + error);
         console.error(error);
-        mongoose.disconnect();
-        startBackofConnect(mongoose);
+        disconnect();
+        startBackofConnect(connection);
     });
 // Process termination
     process.on('SIGINT', function () {
-        mongoose.connection.close(function () {
+        connection.close(function () {
             console.log('Mongoose default connection disconnected through app termination');
             process.exit(0);
         });
@@ -42,10 +50,23 @@ export function connectMongo() {
     console.log("Opening connection ... Done");
 }
 
-let openConnection = function () {
+export function openConnection() {
     console.log(`Opening connection ...${CONNECTION_STRING}`);
-    return connect(CONNECTION_STRING);
-};
+    let options = {
+        user: MONGO_USER,
+        pass: MONGO_PASS,
+        useMongoClient: true
+    };
+    connect(CONNECTION_STRING, options)
+        .then(() => {
+            console.log("Connection established - CONFIRMED");
+        })
+        .catch((error) => {
+            console.log("Connection Failed"+JSON.stringify(error));
+            disconnect();
+            startBackofConnect(connection);
+        });
+}
 
 function startBackofConnect(mongoose) {
     console.log("New retry");

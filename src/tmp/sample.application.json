@@ -1,0 +1,15 @@
+{
+  "firstName": "a",
+  "lastName": "a",
+  "address": {
+    "street": "a",
+    "city": "a",
+    "postCode": "11111"
+  },
+  "email": "a",
+  "personalId": "111111/1111",
+  "phone": "1",
+  "phoneMother": "1",
+  "phoneFather": "1",
+  "subscribe": true
+}
