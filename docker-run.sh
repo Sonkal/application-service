@@ -13,3 +13,6 @@ docker run \
   -d \
   sonkal/application-service \
   node dist/index.js
+
+#docker run  --rm --network mongo-net  -e "NODE_ENV=production" -e "MONGO_HOST=$MONGO_HOST" -e "MONGO_USER=$MONGO_USER" -e "MONGO_PASS=$MONGO_PASS" -w "/home/node/app" -p 3000:3000 -it -u root sonkal/application-service /bin/sh
+

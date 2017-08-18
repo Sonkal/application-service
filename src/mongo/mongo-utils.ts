@@ -5,7 +5,7 @@ import {disconnect} from "mongoose";
 const MONGO_USER = process.env.MONGO_USER || "mymongo";
 const MONGO_PASS = process.env.MONGO_PASS || "mymongo";
 const MONGO_HOST = process.env.MONGO_HOST || "mymongo";
-const CONNECTION_STRING = `mongodb://${MONGO_HOST}/mydb`;
+const CONNECTION_STRING = `mongodb://${MONGO_HOST}:27017/mydb`;
 
 let connectedStatus = false;
 let retryRunningId = 0;
@@ -62,7 +62,7 @@ export function openConnection() {
             console.log("Connection established - CONFIRMED");
         })
         .catch((error) => {
-            console.log("Connection Failed"+JSON.stringify(error));
+            console.log("Connection Failed:"+JSON.stringify(error));
             disconnect();
             startBackofConnect(connection);
         });

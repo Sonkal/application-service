@@ -1,7 +1,9 @@
 import {connect, Mongoose} from "mongoose";
 import {ApplicationDb} from "../applications/application-db";
 
-const CONNECTION_STRING = `mongodb://dockerm:27017/mydb`;
+const HOST = process.env.MONGO_HOST || "dockerm";
+
+const CONNECTION_STRING = `mongodb://${HOST}:27017/mydb`;
 
 let mongoose = new Mongoose();
 let connection = mongoose.connection;
