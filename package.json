@@ -22,9 +22,10 @@
     "json2csv": "^3.9.1",
     "mongo-errors": "^1.0.1",
     "mongoose": "^4.9.6",
-    "typescript-rest": "^0.4.0"
+    "typescript-rest": "^1.1.1"
   },
   "devDependencies": {
+    "express-debug": "^1.1.1",
     "typings": "^2.1.1"
   }
 }
