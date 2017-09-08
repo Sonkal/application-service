@@ -17,6 +17,11 @@ ADD package.json /home/node/app/package.json
 RUN cd /home/node/app && npm install --production
 
 COPY . /home/node/app
+
+USER root
+RUN chown -R node:node .
+USER node
+
 RUN npm run-script build
 
 EXPOSE 3000
